@@ -11,6 +11,9 @@ const signupSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid date of birth"),
+  phoneNumber: z.string().min(7, "Enter a valid phone number"),
+  gender: z.enum(["FEMALE", "MALE", "NON_BINARY", "PREFER_NOT_TO_SAY"]),
 });
 
 authRouter.post("/signup", async (req, res) => {
@@ -18,7 +21,14 @@ authRouter.post("/signup", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const { email, password, firstName, lastName } = parsed.data;
+  const { email, password, firstName, lastName, dateOfBirth, phoneNumber, gender } = parsed.data;
+
+  // Basic age check — must be 18+ to open an account, same as any real bank
+  const dob = new Date(dateOfBirth);
+  const age = (Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+  if (age < 18) {
+    return res.status(400).json({ error: "You must be at least 18 years old to open an account" });
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -34,6 +44,9 @@ authRouter.post("/signup", async (req, res) => {
       passwordHash,
       firstName,
       lastName,
+      dateOfBirth: dob,
+      phoneNumber,
+      gender,
       accounts: {
         create: {
           accountNumber: await generateUniqueAccountNumber(),
