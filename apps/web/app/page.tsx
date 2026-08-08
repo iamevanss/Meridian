@@ -7,13 +7,14 @@ import { getToken, clearToken, getUser, api } from "../lib/api";
 import { AccountCard } from "../components/AccountCard";
 import { QuickActions } from "../components/QuickActions";
 import { BottomNav } from "../components/BottomNav";
-import { SpendingChart } from "../components/SpendingChart";
+import { AccountDetails } from "../components/AccountDetails";
 
 interface Account {
   id: string;
   nickname: string | null;
   type: "CHECKING" | "SAVINGS";
   accountNumber: string;
+  routingCode: string;
   balanceCents: string;
 }
 
@@ -78,6 +79,23 @@ export default function DashboardPage() {
     router.replace("/login");
   }
 
+  function handleQuickAction(key: string) {
+    if (key === "send") {
+      router.push("/transfer");
+    } else {
+      alert("This feature is coming soon.");
+    }
+  }
+
+  function handleNavSelect(key: string) {
+    if (key === "home") return;
+    if (key === "transfers") {
+      router.push("/transfer");
+    } else {
+      alert("This feature is coming soon.");
+    }
+  }
+
   const active = accounts.find((a) => a.id === activeAccountId) || accounts[0];
   const totalCents = accounts.reduce((sum, a) => sum + Number(a.balanceCents), 0);
   const user = getUser();
@@ -140,8 +158,19 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <QuickActions />
+            <QuickActions onAction={handleQuickAction} />
           </div>
+
+          {active && (
+            <div style={{ marginBottom: 20 }}>
+              <AccountDetails
+                nickname={active.nickname}
+                type={active.type}
+                accountNumber={active.accountNumber}
+                routingCode={active.routingCode}
+              />
+            </div>
+          )}
 
           <div style={{ marginBottom: 20 }}>
             <SpendingChart transactions={transactions} />
@@ -173,7 +202,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      <BottomNav active="home" />
+      <BottomNav active="home" onSelect={handleNavSelect} />
     </main>
   );
 }
