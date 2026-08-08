@@ -13,7 +13,9 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 
-const allowedOrigins = [process.env.CORS_ORIGIN_WEB, process.env.CORS_ORIGIN_ADMIN].filter(Boolean);
+const allowedOrigins = [process.env.CORS_ORIGIN_WEB, process.env.CORS_ORIGIN_ADMIN].filter(
+  (origin): origin is string => Boolean(origin)
+);
 app.use(
   cors({
     origin: allowedOrigins.length ? allowedOrigins : true,
@@ -46,4 +48,3 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Meridian API listening on port ${PORT}`);
 });
-  
