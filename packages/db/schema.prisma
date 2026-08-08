@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+}
+
+enum AccountStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          Role      @default(CUSTOMER)
+  mfaEnabled    Boolean   @default(false)
+  mfaSecret     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  adminActions  AdminAction[] @relation("AdminActor")
+
+  @@index([email])
+}
+
+model Account {
+  id            String        @id @default(uuid())
+  accountNumber String        @unique // 10-digit, generated + checksum validated
+  routingCode   String        @default("021000021") // fake demo routing number
+  nickname      String?
+  type          AccountType   @default(CHECKING)
+  status        AccountStatus @default(ACTIVE)
+  // Store balance in integer minor units (cents) — never use float for money
+  balanceCents  BigInt        @default(0)
+  currency      String        @default("USD")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+
+  transactionsOut Transaction[] @relation("SourceAccount")
+  transactionsIn  Transaction[] @relation("DestAccount")
+
+  @@index([userId])
+  @@index([accountNumber])
+}
+
+// Every row here is one leg of a transfer (a debit OR a credit).
+// A transfer between two accounts always produces exactly two rows,
+// linked by transferId, created atomically in one DB transaction.
+model Transaction {
+  id           String          @id @default(uuid())
+  transferId   String          // groups the debit+credit pair (or single external tx)
+  type         TransactionType
+  amountCents  BigInt
+  balanceAfterCents BigInt     // running balance snapshot on this account, post-transaction
+  description  String
+  memo         String?
+  createdAt    DateTime        @default(now())
+
+  accountId    String
+  account      Account         @relation("SourceAccount", fields: [accountId], references: [id])
+
+  counterpartyAccountId String?
+  counterpartyAccount   Account? @relation("DestAccount", fields: [counterpartyAccountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@index([transferId])
+}
+
+model Transfer {
+  id            String          @id @default(uuid())
+  fromAccountId String
+  toAccountId   String
+  amountCents   BigInt
+  status        TransferStatus  @default(PENDING)
+  failureReason String?
+  createdAt     DateTime        @default(now())
+  completedAt   DateTime?
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+}
+
+// Immutable audit trail — every privileged admin action writes one row here.
+model AdminAction {
+  id          String   @id @default(uuid())
+  actorId     String
+  actor       User     @relation("AdminActor", fields: [actorId], references: [id])
+  actionType  String   // e.g. "FREEZE_ACCOUNT", "ADJUST_BALANCE", "UNFREEZE_ACCOUNT"
+  targetType  String   // e.g. "Account", "User"
+  targetId    String
+  details     Json
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetId])
+}
