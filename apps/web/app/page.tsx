@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { GlassPanel, LedgerRow } from "@meridian/ui";
+import { getToken } from "../lib/api";
 
 // Placeholder data — replace with a real fetch to
 // `${NEXT_PUBLIC_API_URL}/accounts` and `/accounts/:id/transactions`
@@ -19,6 +22,14 @@ const demoTransactions = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!getToken()) {
+      router.replace("/login");
+    }
+  }, [router]);
+
   const dollars = (Number(demoAccount.balanceCents) / 100).toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
