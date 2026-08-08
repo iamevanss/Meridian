@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GlassPanel, LedgerRow } from "@meridian/ui";
-import { getToken, clearToken, api } from "../lib/api";
+import { getToken, clearToken, getUser, api } from "../lib/api";
+import { AccountCard } from "../components/AccountCard";
+import { QuickActions } from "../components/QuickActions";
+import { BottomNav } from "../components/BottomNav";
+import { SpendingChart } from "../components/SpendingChart";
 
 interface Account {
   id: string;
   nickname: string | null;
+  type: "CHECKING" | "SAVINGS";
   accountNumber: string;
   balanceCents: string;
 }
@@ -24,6 +29,7 @@ interface Transaction {
 export default function DashboardPage() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,19 +39,18 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
-    loadDashboard();
+    loadAccounts();
   }, [router]);
 
-  async function loadDashboard() {
+  async function loadAccounts() {
     setLoading(true);
     setError(null);
     try {
       const { accounts } = await api.getAccounts();
       setAccounts(accounts);
-
       if (accounts.length > 0) {
-        const { transactions } = await api.getTransactions(accounts[0].id);
-        setTransactions(transactions);
+        setActiveAccountId(accounts[0].id);
+        await loadTransactions(accounts[0].id);
       }
     } catch (err: any) {
       if (err.status === 401) {
@@ -53,9 +58,18 @@ export default function DashboardPage() {
         router.replace("/login");
         return;
       }
-      setError(err.message || "Couldn't load your accounts. Pull to refresh, or try again shortly.");
+      setError(err.message || "Couldn't load your accounts.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadTransactions(accountId: string) {
+    try {
+      const { transactions } = await api.getTransactions(accountId);
+      setTransactions(transactions);
+    } catch {
+      // non-fatal — accounts still show even if transaction history fails
     }
   }
 
@@ -64,21 +78,22 @@ export default function DashboardPage() {
     router.replace("/login");
   }
 
-  const primary = accounts[0];
-  const dollars = primary
-    ? (Number(primary.balanceCents) / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })
-    : "—";
+  const active = accounts.find((a) => a.id === activeAccountId) || accounts[0];
+  const totalCents = accounts.reduce((sum, a) => sum + Number(a.balanceCents), 0);
+  const user = getUser();
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "";
 
   return (
-    <main style={{ maxWidth: 480, margin: "0 auto", padding: "48px 20px 80px" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-tertiary)", letterSpacing: 0.5 }}>
-            MERIDIAN
+    <main style={{ maxWidth: 520, margin: "0 auto", padding: "28px 20px 110px" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <img src="/brand/logo-mark.svg" alt="" width={40} height={40} style={{ borderRadius: 12 }} />
+          <div>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-tertiary)" }}>Good to see you</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600 }}>
+              {fullName ? `Welcome, ${fullName}` : "Welcome back"}
+            </div>
           </div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: "6px 0 0", fontWeight: 600 }}>
-            Your accounts
-          </h1>
         </div>
         <button onClick={handleLogout} style={logoutButton}>Log out</button>
       </header>
@@ -88,42 +103,52 @@ export default function DashboardPage() {
       {!loading && error && (
         <GlassPanel style={{ padding: 20, marginBottom: 20 }}>
           <div style={{ color: "var(--debit-500)", fontSize: 14, marginBottom: 10 }}>{error}</div>
-          <button onClick={loadDashboard} style={secondaryButton}>Try again</button>
+          <button onClick={loadAccounts} style={secondaryButton}>Try again</button>
         </GlassPanel>
       )}
 
-      {!loading && !error && !primary && (
+      {!loading && !error && accounts.length === 0 && (
         <GlassPanel style={{ padding: 24, textAlign: "center" }}>
           <div style={{ color: "var(--text-secondary)" }}>No accounts found on this profile yet.</div>
         </GlassPanel>
       )}
 
-      {!loading && !error && primary && (
+      {!loading && !error && accounts.length > 0 && (
         <>
-          <GlassPanel raised style={{ padding: 28, marginBottom: 24 }}>
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-secondary)" }}>
-              {primary.nickname || "Checking"} · •••• {primary.accountNumber.slice(-4)}
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-tertiary)" }}>Total balance</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 34, fontWeight: 600, letterSpacing: -0.5 }}>
+              {(totalCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}
             </div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontVariantNumeric: "tabular-nums",
-                fontSize: 42,
-                fontWeight: 600,
-                marginTop: 8,
-                letterSpacing: -1,
-              }}
-            >
-              {dollars}
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-              <button style={primaryButton}>Send money</button>
-              <button style={secondaryButton}>Request</button>
-            </div>
-          </GlassPanel>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "16px 0 8px", marginBottom: 8, scrollbarWidth: "none" }}>
+            {accounts.map((a) => (
+              <AccountCard
+                key={a.id}
+                nickname={a.nickname}
+                type={a.type}
+                accountNumber={a.accountNumber}
+                balanceCents={a.balanceCents}
+                active={a.id === activeAccountId}
+                onClick={() => {
+                  setActiveAccountId(a.id);
+                  loadTransactions(a.id);
+                }}
+              />
+            ))}
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <QuickActions />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <SpendingChart transactions={transactions} />
+          </div>
 
           <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-secondary)", margin: "0 0 12px 4px" }}>
-            Recent activity
+            Recent activity {active ? `· ${active.nickname || active.type}` : ""}
           </div>
 
           {transactions.length === 0 ? (
@@ -147,6 +172,8 @@ export default function DashboardPage() {
           )}
         </>
       )}
+
+      <BottomNav active="home" />
     </main>
   );
 }
@@ -154,26 +181,14 @@ export default function DashboardPage() {
 function SkeletonState() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ height: 160, borderRadius: "var(--radius-panel)", background: "var(--glass-fill)", marginBottom: 14 }} />
+      <div style={{ height: 140, borderRadius: "var(--radius-panel)", background: "var(--glass-fill)" }} />
+      <div style={{ height: 90, borderRadius: "var(--radius-panel)", background: "var(--glass-fill)" }} />
       {[0, 1, 2].map((i) => (
         <div key={i} style={{ height: 64, borderRadius: "var(--radius-chip)", background: "var(--glass-fill)" }} />
       ))}
     </div>
   );
 }
-
-const primaryButton: React.CSSProperties = {
-  flex: 1,
-  padding: "12px 0",
-  borderRadius: 14,
-  border: "none",
-  background: "var(--signal-500)",
-  color: "white",
-  fontFamily: "var(--font-body)",
-  fontWeight: 600,
-  fontSize: 15,
-  cursor: "pointer",
-};
 
 const secondaryButton: React.CSSProperties = {
   flex: 1,
