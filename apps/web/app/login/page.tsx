@@ -30,10 +30,11 @@ export default function LoginPage() {
   return (
     <main style={{ maxWidth: 420, margin: "0 auto", padding: "64px 20px" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--text-tertiary)", letterSpacing: 0.5 }}>
+        <img src="/brand/logo-mark.svg" alt="Meridian" width={56} height={56} style={{ borderRadius: 16 }} />
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--text-tertiary)", letterSpacing: 0.5, marginTop: 12 }}>
           MERIDIAN
         </div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "6px 0 0", fontWeight: 600 }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: "4px 0 0", fontWeight: 600 }}>
           Welcome back
         </h1>
       </div>
