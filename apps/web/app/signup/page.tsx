@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GlassPanel } from "@meridian/ui";
-import { api, setToken } from "../../lib/api";
+import { api, setToken, setUser } from "../../lib/api";
 
 const GENDERS = [
   { value: "FEMALE", label: "Female" },
@@ -43,6 +43,7 @@ export default function SignupPage() {
     try {
       const result = await api.signup(form);
       setToken(result.token);
+      setUser(result.user);
       router.push("/");
     } catch (err: any) {
       setError(err.message || "Could not create your account. Please try again.");
