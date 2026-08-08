@@ -1,1 +1,13 @@
+@import "@meridian/ui/src/tokens.css";
 
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% -10%, #16233a 0%, transparent 60%),
+              radial-gradient(ellipse 70% 50% at 90% 10%, #1a1430 0%, transparent 55%),
+              var(--ink-950);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
