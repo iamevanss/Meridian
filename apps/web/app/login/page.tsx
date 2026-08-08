@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GlassPanel } from "@meridian/ui";
-import { api, setToken } from "../../lib/api";
+import { api, setToken, setUser } from "../../lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function LoginPage() {
     try {
       const result = await api.login({ email, password });
       setToken(result.token);
+      setUser(result.user);
       router.push("/");
     } catch (err: any) {
       setError(err.message || "Invalid email or password.");
