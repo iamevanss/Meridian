@@ -7,6 +7,7 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const TOKEN_KEY = "meridian_token";
+const USER_KEY = "meridian_user";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -19,6 +20,24 @@ export function setToken(token: string) {
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+export interface StoredUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export function getUser(): StoredUser | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(USER_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+
+export function setUser(user: StoredUser) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 class ApiError extends Error {
