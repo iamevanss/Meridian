@@ -10,7 +10,10 @@ import { adminRouter } from "./routes/admin";
 
 const app = express();
 
-app.use(helmet());
+// crossOriginResourcePolicy defaults to "same-origin" in helmet, which silently
+// blocks the browser from reading responses from a different origin (like our
+// Vercel apps calling this API) — even when CORS headers are otherwise correct.
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(express.json());
 
 const allowedOrigins = [process.env.CORS_ORIGIN_WEB, process.env.CORS_ORIGIN_ADMIN].filter(
