@@ -37,7 +37,8 @@ authRouter.post("/signup", async (req, res) => {
 
   const passwordHash = await hashPassword(password);
 
-  // Create the user and their first checking account together.
+  // Create the user and both starter accounts together — real banks give
+  // you a checking + savings pair by default, so we do too.
   const user = await prisma.user.create({
     data: {
       email,
@@ -48,13 +49,20 @@ authRouter.post("/signup", async (req, res) => {
       phoneNumber,
       gender,
       accounts: {
-        create: {
-          accountNumber: await generateUniqueAccountNumber(),
-          type: "CHECKING",
-          nickname: "Everyday Checking",
-          // Seed with a friendly demo balance so the dashboard isn't empty ($1,000.00)
-          balanceCents: 100000n,
-        },
+        create: [
+          {
+            accountNumber: await generateUniqueAccountNumber(),
+            type: "CHECKING",
+            nickname: "Everyday Checking",
+            balanceCents: 100000n, // demo seed: $1,000.00
+          },
+          {
+            accountNumber: await generateUniqueAccountNumber(),
+            type: "SAVINGS",
+            nickname: "High-Yield Savings",
+            balanceCents: 500000n, // demo seed: $5,000.00
+          },
+        ],
       },
     },
     include: { accounts: true },
