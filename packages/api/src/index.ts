@@ -10,6 +10,11 @@ import { adminRouter } from "./routes/admin";
 
 const app = express();
 
+// Railway (like most hosts) sits in front of the app as a reverse proxy.
+// Without this, express-rate-limit can't correctly read the real client IP
+// from the X-Forwarded-For header and throws a validation error.
+app.set("trust proxy", 1);
+
 // crossOriginResourcePolicy defaults to "same-origin" in helmet, which silently
 // blocks the browser from reading responses from a different origin (like our
 // Vercel apps calling this API) — even when CORS headers are otherwise correct.
