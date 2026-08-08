@@ -1,0 +1,16 @@
+{
+  "name": "meridian",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w apps/web",
+    "dev:admin": "npm run dev -w apps/admin",
+    "dev:api": "npm run dev -w packages/api",
+    "db:generate": "npm run generate -w packages/db",
+    "db:push": "npm run push -w packages/db",
+    "db:studio": "npm run studio -w packages/db"
+  }
+}
