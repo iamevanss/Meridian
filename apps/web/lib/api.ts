@@ -51,8 +51,15 @@ async function request(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
-  signup: (input: { email: string; password: string; firstName: string; lastName: string }) =>
-    request("/auth/signup", { method: "POST", body: JSON.stringify(input) }),
+  signup: (input: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    phoneNumber: string;
+    gender: string;
+  }) => request("/auth/signup", { method: "POST", body: JSON.stringify(input) }),
 
   login: (input: { email: string; password: string }) =>
     request("/auth/login", { method: "POST", body: JSON.stringify(input) }),
