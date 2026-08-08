@@ -19,13 +19,17 @@ export async function verifyPassword(password: string, hash: string) {
 }
 
 export function signCustomerToken(payload: AuthPayload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "7d" });
+  const options: jwt.SignOptions = {
+    expiresIn: (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"],
+  };
+  return jwt.sign(payload, JWT_SECRET, options);
 }
 
 export function signAdminToken(payload: AuthPayload) {
   // Separate secret from customer tokens — an admin token can never be
   // forged or reused by decoding a customer token, and vice versa.
-  return jwt.sign(payload, ADMIN_JWT_SECRET, { expiresIn: "12h" });
+  const options: jwt.SignOptions = { expiresIn: "12h" };
+  return jwt.sign(payload, ADMIN_JWT_SECRET, options);
 }
 
 function extractToken(req: Request): string | null {
