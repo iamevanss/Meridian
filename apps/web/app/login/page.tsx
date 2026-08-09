@@ -50,6 +50,10 @@ export default function LoginPage() {
           <button type="submit" disabled={loading} style={primaryButton}>
             {loading ? "Logging in…" : "Log in"}
           </button>
+
+          <a href="/forgot-password" style={{ fontSize: 13, color: "var(--signal-400)", textAlign: "center" }}>
+            Forgot password?
+          </a>
         </form>
       </GlassPanel>
 
