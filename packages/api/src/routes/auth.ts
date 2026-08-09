@@ -109,6 +109,41 @@ authRouter.post("/login", async (req, res) => {
   });
 });
 
+// Password reset via identity verification — no email service is wired up
+// yet, so instead of a "check your email" link flow, we confirm identity
+// using email + date of birth + phone number (all provided at signup)
+// before allowing a new password to be set directly.
+const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  dateOfBirth: z.string().refine((v) => !isNaN(Date.parse(v))),
+  phoneNumber: z.string().min(7),
+  newPassword: z.string().min(8),
+});
+
+authRouter.post("/reset-password", async (req, res) => {
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const { email, dateOfBirth, phoneNumber, newPassword } = parsed.data;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  const dobMatches =
+    user?.dateOfBirth &&
+    new Date(user.dateOfBirth).toISOString().slice(0, 10) === new Date(dateOfBirth).toISOString().slice(0, 10);
+  const phoneMatches = user?.phoneNumber === phoneNumber;
+
+  if (!user || !dobMatches || !phoneMatches) {
+    // Same generic message whether the email doesn't exist or the details
+    // don't match — avoids confirming which emails are registered.
+    return res.status(401).json({ error: "Those details don't match our records." });
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+
+  return res.json({ success: true });
+});
+
 // Separate endpoint + separate token secret from customer login.
 authRouter.post("/admin/login", async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
