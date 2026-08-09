@@ -78,6 +78,7 @@ export const api = {
     dateOfBirth: string;
     phoneNumber: string;
     gender: string;
+    acceptedTerms: boolean;
   }) => request("/auth/signup", { method: "POST", body: JSON.stringify(input) }),
 
   login: (input: { email: string; password: string }) =>
