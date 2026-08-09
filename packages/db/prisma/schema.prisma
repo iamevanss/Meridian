@@ -47,13 +47,35 @@ model User {
   role          Role      @default(CUSTOMER)
   mfaEnabled    Boolean   @default(false)
   mfaSecret     String?
+  pinHash       String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   accounts      Account[]
   adminActions  AdminAction[] @relation("AdminActor")
+  notifications Notification[]
 
   @@index([email])
+}
+
+enum NotificationType {
+  TRANSFER_SENT
+  TRANSFER_RECEIVED
+  ACCOUNT_FROZEN
+  ACCOUNT_UNFROZEN
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Account {
