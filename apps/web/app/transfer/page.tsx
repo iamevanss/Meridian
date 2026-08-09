@@ -20,6 +20,7 @@ export default function TransferPage() {
   const [toAccountNumber, setToAccountNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,9 +90,14 @@ export default function TransferPage() {
         toAccountNumber,
         amountDollars,
         description: description || "Transfer",
+        pin,
       });
       setSuccess({ amount, newBalanceCents: result.newBalanceCents });
     } catch (err: any) {
+      if (err.status === 428) {
+        router.push("/pin/setup");
+        return;
+      }
       setError(err.message || "Transfer failed. Please try again.");
     } finally {
       setSubmitting(false);
@@ -190,6 +196,19 @@ export default function TransferPage() {
 
             <Field label="What's it for? (optional)">
               <input style={input} placeholder="e.g. Rent, dinner, gift" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={140} />
+            </Field>
+
+            <Field label="Transaction PIN">
+              <input
+                style={{ ...input, letterSpacing: 4 }}
+                inputMode="numeric"
+                maxLength={6}
+                type="password"
+                placeholder="••••"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                required
+              />
             </Field>
 
             {error && <div style={{ color: "var(--debit-500)", fontSize: 14 }}>{error}</div>}
