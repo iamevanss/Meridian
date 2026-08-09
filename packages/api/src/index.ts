@@ -7,6 +7,8 @@ import { authRouter } from "./routes/auth";
 import { accountsRouter } from "./routes/accounts";
 import { transfersRouter } from "./routes/transfers";
 import { adminRouter } from "./routes/admin";
+import { usersRouter } from "./routes/users";
+import { notificationsRouter } from "./routes/notifications";
 
 const app = express();
 
@@ -46,6 +48,8 @@ app.use("/auth", authLimiter, authRouter);
 app.use("/accounts", accountsRouter);
 app.use("/transfers", transfersRouter);
 app.use("/admin", adminRouter);
+app.use("/users", usersRouter);
+app.use("/notifications", notificationsRouter);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
