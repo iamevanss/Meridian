@@ -87,6 +87,8 @@ export const api = {
 
   getTransactions: (accountId: string) => request(`/accounts/${accountId}/transactions`),
 
+  lookupAccount: (accountNumber: string) => request(`/accounts/lookup/${accountNumber}`),
+
   transfer: (input: { fromAccountId: string; toAccountNumber: string; amountDollars: number; description: string; memo?: string }) =>
     request("/transfers", { method: "POST", body: JSON.stringify(input) }),
 };
