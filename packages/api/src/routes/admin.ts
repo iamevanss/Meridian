@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "@meridian/db";
 import { requireAdmin } from "../lib/auth";
+import { createNotification } from "../lib/notifications";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -58,6 +59,13 @@ adminRouter.post("/accounts/freeze", async (req, res) => {
     data: { status: "FROZEN" },
   });
 
+  await createNotification(
+    account.userId,
+    "ACCOUNT_FROZEN",
+    "Account frozen",
+    `Your account ending in ${account.accountNumber.slice(-4)} has been frozen.`
+  );
+
   await logAdminAction(userId, "FREEZE_ACCOUNT", "Account", accountId, { reason });
   res.json({ account: serializeAccount(account) });
 });
@@ -72,6 +80,13 @@ adminRouter.post("/accounts/unfreeze", async (req, res) => {
     where: { id: accountId },
     data: { status: "ACTIVE" },
   });
+
+  await createNotification(
+    account.userId,
+    "ACCOUNT_UNFROZEN",
+    "Account restored",
+    `Your account ending in ${account.accountNumber.slice(-4)} is active again.`
+  );
 
   await logAdminAction(userId, "UNFREEZE_ACCOUNT", "Account", accountId, { reason });
   res.json({ account: serializeAccount(account) });
