@@ -22,6 +22,7 @@ export default function SignupPage() {
     email: "",
     gender: "",
     password: "",
+    acceptedTerms: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,11 @@ export default function SignupPage() {
 
     if (!form.gender) {
       setError("Please select a gender option.");
+      return;
+    }
+
+    if (!form.acceptedTerms) {
+      setError("You must accept the Terms & Conditions to create an account.");
       return;
     }
 
@@ -103,6 +109,18 @@ export default function SignupPage() {
               <input style={input} type="password" placeholder="Minimum 8 characters" value={form.password} onChange={(e) => update("password", e.target.value)} required minLength={8} />
             </Field>
           </Section>
+
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--text-secondary)" }}>
+            <input
+              type="checkbox"
+              checked={form.acceptedTerms}
+              onChange={(e) => setForm((f) => ({ ...f, acceptedTerms: e.target.checked }))}
+              style={{ marginTop: 2 }}
+            />
+            <span>
+              I agree to the <a href="/terms" style={{ color: "var(--signal-400)" }}>Terms &amp; Conditions</a>
+            </span>
+          </label>
 
           {error && <div style={{ color: "var(--debit-500)", fontSize: 14 }}>{error}</div>}
 
