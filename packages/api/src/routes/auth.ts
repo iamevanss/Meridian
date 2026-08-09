@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@meridian/db";
 import { hashPassword, verifyPassword, signCustomerToken, signAdminToken } from "../lib/auth";
 import { generateUniqueAccountNumber } from "../lib/accountNumber";
+import { createNotification } from "../lib/notifications";
 
 export const authRouter = Router();
 
@@ -14,6 +15,7 @@ const signupSchema = z.object({
   dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid date of birth"),
   phoneNumber: z.string().min(7, "Enter a valid phone number"),
   gender: z.enum(["FEMALE", "MALE", "NON_BINARY", "PREFER_NOT_TO_SAY"]),
+  acceptedTerms: z.literal(true, { errorMap: () => ({ message: "You must accept the Terms & Conditions to create an account." }) }),
 });
 
 authRouter.post("/signup", async (req, res) => {
@@ -48,6 +50,7 @@ authRouter.post("/signup", async (req, res) => {
       dateOfBirth: dob,
       phoneNumber,
       gender,
+      termsAcceptedAt: new Date(),
       accounts: {
         create: [
           {
@@ -67,6 +70,14 @@ authRouter.post("/signup", async (req, res) => {
     },
     include: { accounts: true },
   });
+
+  await createNotification(
+    user.id,
+    "WELCOME",
+    `Welcome to Meridian, ${firstName}`,
+    "Your Checking and Savings accounts are ready. Before you get started, please take a moment to review our Terms & Conditions.",
+    { actionLabel: "View Terms & Conditions", actionUrl: "/terms" }
+  );
 
   const token = signCustomerToken({ userId: user.id, role: "CUSTOMER" });
   return res.status(201).json({
