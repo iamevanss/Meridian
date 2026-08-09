@@ -84,6 +84,9 @@ export const api = {
   login: (input: { email: string; password: string }) =>
     request("/auth/login", { method: "POST", body: JSON.stringify(input) }),
 
+  resetPassword: (input: { email: string; dateOfBirth: string; phoneNumber: string; newPassword: string }) =>
+    request("/auth/reset-password", { method: "POST", body: JSON.stringify(input) }),
+
   getAccounts: () => request("/accounts"),
 
   getTransactions: (accountId: string) => request(`/accounts/${accountId}/transactions`),
