@@ -59,6 +59,7 @@ model User {
 }
 
 enum NotificationType {
+  WELCOME
   TRANSFER_SENT
   TRANSFER_RECEIVED
   ACCOUNT_FROZEN
@@ -66,14 +67,16 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id])
-  type      NotificationType
-  title     String
-  body      String
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  type        NotificationType
+  title       String
+  body        String
+  actionLabel String?
+  actionUrl   String?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
 
   @@index([userId, createdAt])
 }
