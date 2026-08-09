@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "@meridian/db";
 import { requireAuth } from "../lib/auth";
+import { isValidAccountNumber } from "../lib/accountNumber";
 
 export const accountsRouter = Router();
 accountsRouter.use(requireAuth);
@@ -12,6 +13,38 @@ function serializeAccount(a: any) {
 function serializeTransaction(t: any) {
   return { ...t, amountCents: t.amountCents.toString(), balanceAfterCents: t.balanceAfterCents.toString() };
 }
+
+// Looks up the name behind an account number, before a transfer is sent —
+// same idea as "Confirm recipient" on real banking apps. Deliberately
+// returns the minimum needed to confirm identity (first name + last
+// initial), never the full name, email, or any account details.
+accountsRouter.get("/lookup/:accountNumber", async (req, res) => {
+  const { accountNumber } = req.params;
+
+  if (!isValidAccountNumber(accountNumber)) {
+    return res.status(400).json({ error: "Invalid account number" });
+  }
+
+  const account = await prisma.account.findUnique({
+    where: { accountNumber },
+    select: {
+      type: true,
+      status: true,
+      user: { select: { firstName: true, lastName: true } },
+    },
+  });
+
+  if (!account) {
+    return res.status(404).json({ error: "No account found with that number" });
+  }
+
+  return res.json({
+    firstName: account.user.firstName,
+    lastInitial: account.user.lastName.charAt(0).toUpperCase(),
+    accountType: account.type,
+    status: account.status,
+  });
+});
 
 // List the authenticated user's accounts
 accountsRouter.get("/", async (req, res) => {
