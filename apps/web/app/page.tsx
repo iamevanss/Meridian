@@ -8,6 +8,7 @@ import { AccountCard } from "../components/AccountCard";
 import { QuickActions } from "../components/QuickActions";
 import { BottomNav } from "../components/BottomNav";
 import { AccountDetails } from "../components/AccountDetails";
+import { SpendingChart } from "../components/SpendingChart";
 
 interface Account {
   id: string;
