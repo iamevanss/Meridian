@@ -79,19 +79,23 @@ export default function DashboardPage() {
   function handleQuickAction(key: string) {
     if (key === "send") {
       router.push("/transfer");
-    } else {
-      alert("This feature is coming soon.");
+    } else if (key === "cards") {
+      router.push("/cards");
+    } else if (key === "request") {
+      router.push("/coming-soon?feature=Request%20money");
+    } else if (key === "pay") {
+      router.push("/coming-soon?feature=Pay%20bills");
     }
   }
 
   function handleNavSelect(key: string) {
     if (key === "home") return;
     if (key === "transfers") {
-      router.push("/transfer");
+      router.push("/activity");
     } else if (key === "profile") {
       router.push("/profile");
-    } else {
-      alert("This feature is coming soon.");
+    } else if (key === "cards") {
+      router.push("/cards");
     }
   }
 
