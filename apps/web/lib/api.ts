@@ -89,6 +89,23 @@ export const api = {
 
   lookupAccount: (accountNumber: string) => request(`/accounts/lookup/${accountNumber}`),
 
-  transfer: (input: { fromAccountId: string; toAccountNumber: string; amountDollars: number; description: string; memo?: string }) =>
+  transfer: (input: { fromAccountId: string; toAccountNumber: string; amountDollars: number; description: string; memo?: string; pin: string }) =>
     request("/transfers", { method: "POST", body: JSON.stringify(input) }),
+
+  getMe: () => request("/users/me"),
+
+  updateProfile: (input: { email?: string; dateOfBirth?: string; gender?: string }) =>
+    request("/users/me", { method: "PATCH", body: JSON.stringify(input) }),
+
+  changePassword: (input: { currentPassword: string; newPassword: string }) =>
+    request("/users/me/password", { method: "POST", body: JSON.stringify(input) }),
+
+  setPin: (input: { password: string; pin: string }) =>
+    request("/users/me/pin", { method: "POST", body: JSON.stringify(input) }),
+
+  getNotifications: () => request("/notifications"),
+
+  markNotificationRead: (id: string) => request(`/notifications/${id}/read`, { method: "POST" }),
+
+  markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
 };
