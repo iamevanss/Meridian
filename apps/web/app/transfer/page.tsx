@@ -24,6 +24,27 @@ export default function TransferPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ amount: string; newBalanceCents: string } | null>(null);
+  const [recipient, setRecipient] = useState<{ firstName: string; lastInitial: string; accountType: string; status: string } | null>(null);
+  const [recipientError, setRecipientError] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  // Debounced lookup: fires 400ms after the user stops typing a full 10-digit number
+  useEffect(() => {
+    setRecipient(null);
+    setRecipientError(null);
+
+    if (!/^\d{10}$/.test(toAccountNumber)) return;
+
+    setLookingUp(true);
+    const timer = setTimeout(() => {
+      api.lookupAccount(toAccountNumber)
+        .then((r) => setRecipient(r))
+        .catch((err) => setRecipientError(err.status === 404 ? "No Meridian account found with this number." : "Couldn't look up this account."))
+        .finally(() => setLookingUp(false));
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [toAccountNumber]);
 
   useEffect(() => {
     if (!getToken()) {
@@ -50,6 +71,14 @@ export default function TransferPage() {
     }
     if (!/^\d{10}$/.test(toAccountNumber)) {
       setError("Account numbers are 10 digits.");
+      return;
+    }
+    if (!recipient) {
+      setError("Please confirm the recipient before sending.");
+      return;
+    }
+    if (recipient.status !== "ACTIVE") {
+      setError("This account can't currently receive transfers.");
       return;
     }
 
@@ -129,6 +158,22 @@ export default function TransferPage() {
               />
             </Field>
 
+            {lookingUp && (
+              <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>Looking up account…</div>
+            )}
+            {!lookingUp && recipient && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 12, background: "rgba(53,208,127,0.10)", border: "1px solid rgba(53,208,127,0.3)" }}>
+                <span style={{ color: "var(--credit-500)", fontSize: 16 }}>✓</span>
+                <span style={{ fontSize: 14, color: "var(--text-primary)" }}>
+                  Sending to <strong>{recipient.firstName} {recipient.lastInitial}.</strong>
+                  {recipient.status !== "ACTIVE" && <span style={{ color: "var(--debit-500)" }}> — account {recipient.status.toLowerCase()}</span>}
+                </span>
+              </div>
+            )}
+            {!lookingUp && recipientError && (
+              <div style={{ fontSize: 13, color: "var(--debit-500)" }}>{recipientError}</div>
+            )}
+
             <Field label="Amount">
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }}>$</span>
@@ -149,7 +194,7 @@ export default function TransferPage() {
 
             {error && <div style={{ color: "var(--debit-500)", fontSize: 14 }}>{error}</div>}
 
-            <button type="submit" disabled={submitting || accounts.length === 0} style={primaryButton}>
+            <button type="submit" disabled={submitting || accounts.length === 0 || !recipient} style={primaryButton}>
               {submitting ? "Sending…" : "Send money"}
             </button>
           </form>
