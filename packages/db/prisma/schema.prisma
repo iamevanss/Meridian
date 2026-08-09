@@ -48,6 +48,7 @@ model User {
   mfaEnabled    Boolean   @default(false)
   mfaSecret     String?
   pinHash       String?
+  termsAcceptedAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
