@@ -62,7 +62,12 @@ async function request(path: string, options: RequestInit = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const message = data?.error?.formErrors?.[0] || data?.error || "Something went wrong. Please try again.";
+    const fieldErrors = data?.error?.fieldErrors ? Object.values(data.error.fieldErrors).flat() : [];
+    const message =
+      data?.error?.formErrors?.[0] ||
+      fieldErrors[0] ||
+      data?.error ||
+      "Something went wrong. Please try again.";
     throw new ApiError(typeof message === "string" ? message : "Request failed", res.status);
   }
 
